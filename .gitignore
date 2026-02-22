@@ -1,0 +1,305 @@
+# GPU Compute Orchestrator - Git Ignore
+
+# ============================================================================
+# Fortran Build Artifacts
+# ============================================================================
+
+# Compiled binaries
+fortran-compute/bin/*
+!fortran-compute/bin/.gitkeep
+
+# Diffusion N-Body binaries and build artifacts
+compute/diffusion-nbody/fortran-kernel/bin/*
+compute/diffusion-nbody/fortran-kernel/build/
+compute/diffusion-nbody/rust-worker/target/
+
+# Object files and modules
+fortran-compute/build/
+*.o
+*.mod
+*.smod
+
+# Fortran temporary files
+*.tmp
+*.bak
+
+# ============================================================================
+# Go Build Artifacts
+# ============================================================================
+
+# Go binaries
+go-orchestrator/bin/*
+!go-orchestrator/bin/.gitkeep
+
+# Go build cache
+go-orchestrator/pkg/
+
+# Vendor directory (if using)
+go-orchestrator/vendor/
+
+# Go test coverage
+*.out
+coverage.html
+
+# ============================================================================
+# Test Data & Temporary Files
+# ============================================================================
+
+# Anchor export data (keep example, ignore generated)
+anchor-export.csv
+!anchor-export-example.csv
+
+# Test outputs
+test-output/
+*.log
+*.csv.bak
+
+# Diffusion N-Body test artifacts
+compute/diffusion-nbody/test_output.json
+compute/diffusion-nbody/test_input.bin
+compute/diffusion-nbody/test_output.bin
+compute/diffusion-nbody/*.bin
+compute/diffusion-nbody/*.json
+!compute/diffusion-nbody/test_job.json
+
+# Chain analysis results
+chains.json
+chain_stats.json
+chain_descriptions.json
+cache/
+
+# ============================================================================
+# Container & Deployment
+# ============================================================================
+
+# Singularity images
+*.sif
+*.simg
+
+# Docker volumes
+docker-compose.override.yml
+.docker/
+
+# Nomad job outputs
+nomad-data/
+.nomad/
+
+# ============================================================================
+# Configuration (Sensitive)
+# ============================================================================
+
+# Local config overrides
+config.local.yaml
+config.*.local.yaml
+secrets.yaml
+.env
+.env.local
+
+# Database credentials
+database.yml
+postgres.conf
+
+# MQTT broker config (if sensitive)
+mqtt-broker.conf
+
+# ============================================================================
+# Development Environment
+# ============================================================================
+
+# IDE settings
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# VSCode specific
+.vscode/settings.json
+.vscode/launch.json
+!.vscode/extensions.json
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+\#*\#
+.\#*
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ============================================================================
+# Language-Specific
+# ============================================================================
+
+# Python (if using Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+venv/
+env/
+*.egg-info/
+
+# Node.js (if using JS tools)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Rust (if using Rust components)
+target/
+Cargo.lock
+**/*.rs.bk
+
+# ============================================================================
+# GPU & HIP Specific
+# ============================================================================
+
+# HIP compilation artifacts
+*.hip.o
+*.hsaco
+*.cubin
+
+# GPU profiling outputs
+*.nvprof
+*.qdrep
+rocprof_*.csv
+
+# ============================================================================
+# Documentation Build Artifacts
+# ============================================================================
+
+# Generated documentation
+docs/_build/
+docs/.doctrees/
+site/
+
+# LaTeX temporary files (if generating PDFs)
+*.aux
+*.log
+*.toc
+*.pdf
+!docs/*.pdf
+
+# ============================================================================
+# Testing & Benchmarking
+# ============================================================================
+
+# Benchmark results
+benchmark-results/
+*.bench
+*.prof
+
+# Test artifacts
+test-results/
+junit.xml
+
+# Performance profiling
+*.perf
+perf.data*
+
+# ============================================================================
+# Backup & Temporary
+# ============================================================================
+
+# Backup files
+*.bak
+*.backup
+*~
+\#*\#
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Lock files
+*.lock
+!go.sum
+
+# ============================================================================
+# OS Generated
+# ============================================================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ============================================================================
+# Project Specific Patterns
+# ============================================================================
+
+# Semantic diffusion specific
+diffusion-results/
+anchor-chains-*.json
+similarity-matrix-*.dat
+
+# MQTT logs
+mqtt-messages/
+mqtt-debug.log
+
+# Database dumps
+*.sql
+*.dump
+postgres-data/
+
+# Monitoring data
+metrics/
+prometheus-data/
+grafana-data/
+
+# ============================================================================
+# Keep These Examples
+# ============================================================================
+
+# Keep example configs
+!example-config.yaml
+!config.example.yaml
+!.env.example
+
+# Keep example data
+!test-data/
+!examples/
+
+# Keep documentation
+!README.md
+!*.md
+!docs/**/*.md

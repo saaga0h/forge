@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  host: "0.0.0.0"
+  read_timeout: 30s
+  write_timeout: 30s
+
+mqtt:
+  broker: "tcp://mqtt:1883"
+  username: ""
+  password: ""
+  client_id: "go-orchestrator"
+  qos: 1
+  
+nomad:
+  address: "http://nomad:4646"
+  job_name: "gpu-compute"
+  
+compute:
+  default_timeout: 5m
+  max_retries: 3
+  
+logging:
+  level: "info" # debug, info, warn, error
+  format: "json" # json, text

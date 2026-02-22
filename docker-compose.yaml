@@ -1,0 +1,93 @@
+# docker-compose.yaml
+# Local testing stack for development
+
+services:
+  # MQTT Broker
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./configs/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+      - mqtt-logs:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - gpu-compute-net
+
+  # Nomad Server (for local testing)
+  nomad-server:
+    image: hashicorp/nomad:1.8
+    container_name: nomad-server
+    ports:
+      - "4646:4646"
+      - "4647:4647"
+      - "4648:4648"
+    command: agent -dev -bind=0.0.0.0
+    environment:
+      - NOMAD_LOCAL_CONFIG={"server":{"enabled":true,"bootstrap_expect":1},"client":{"enabled":false}}
+    volumes:
+      - nomad-data:/opt/nomad/data
+    restart: unless-stopped
+    networks:
+      - gpu-compute-net
+
+  # Consul (optional, for service discovery)
+  consul:
+    image: hashicorp/consul:1.19
+    container_name: consul
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: agent -dev -client=0.0.0.0 -ui
+    volumes:
+      - consul-data:/consul/data
+    restart: unless-stopped
+    networks:
+      - gpu-compute-net
+
+  # Go Orchestrator
+  orchestrator:
+    build:
+      context: ./go-orchestrator
+      dockerfile: Dockerfile
+    container_name: gpu-orchestrator
+    ports:
+      - "8080:8080"
+    environment:
+      - MQTT_BROKER=tcp://mqtt:1883
+      - NOMAD_ADDR=http://nomad-server:4646
+      - NOMAD_JOB_NAME=gpu-compute
+      - PORT=8080
+    depends_on:
+      - mqtt
+      - nomad-server
+    restart: unless-stopped
+    networks:
+      - gpu-compute-net
+
+  # MQTT Web UI (optional, for debugging)
+  mqtt-explorer:
+    image: smeagolworms/mqtt-explorer
+    container_name: mqtt-explorer
+    ports:
+      - "4000:4000"
+    environment:
+      - HTTP_PORT=4000
+    depends_on:
+      - mqtt
+    restart: unless-stopped
+    networks:
+      - gpu-compute-net
+
+volumes:
+  mqtt-data:
+  mqtt-logs:
+  nomad-data:
+  consul-data:
+
+networks:
+  gpu-compute-net:
+    driver: bridge
