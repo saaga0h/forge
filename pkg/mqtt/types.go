@@ -6,15 +6,6 @@ import (
 	"time"
 )
 
-// JobParams represents parameters sent to compute container
-type JobParams struct {
-	JobID      string                 `json:"job_id"`
-	Operation  string                 `json:"operation"`
-	Parameters map[string]interface{} `json:"parameters"`
-	Timestamp  time.Time              `json:"timestamp"`
-	Timeout    int                    `json:"timeout_seconds,omitempty"`
-}
-
 // JobStatus represents status updates from compute container
 type JobStatus struct {
 	JobID     string    `json:"job_id"`
@@ -24,13 +15,14 @@ type JobStatus struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-// JobResult represents computation result
+// JobResult represents computation result from a worker
 type JobResult struct {
 	JobID      string      `json:"job_id"`
-	Status     string      `json:"status"` // completed, failed
+	Success    bool        `json:"success"`
 	Result     interface{} `json:"result,omitempty"`
 	Error      string      `json:"error,omitempty"`
-	DurationMS int64       `json:"duration_ms"`
+	WorkerID   string      `json:"worker_id,omitempty"`
+	DurationMS int64       `json:"duration_ms,omitempty"`
 	Timestamp  time.Time   `json:"timestamp"`
 	Metrics    *Metrics    `json:"metrics,omitempty"`
 }

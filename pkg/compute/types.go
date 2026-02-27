@@ -7,17 +7,17 @@ import (
 
 // Request represents a compute job request
 type Request struct {
-	Operation  string                 `json:"operation"`
-	Parameters map[string]interface{} `json:"parameters"`
-	Priority   string                 `json:"priority,omitempty"` // low, normal, high
-	Timeout    time.Duration          `json:"timeout,omitempty"`
+	Operation string                 `json:"operation"`
+	Payload   map[string]interface{} `json:"payload,omitempty"`
+	Priority  string                 `json:"priority,omitempty"` // low, normal, high
+	Timeout   time.Duration          `json:"timeout,omitempty"`
 }
 
 // Job represents a compute job in the system
 type Job struct {
-	ID          string                 `json:"job_id"`
-	Operation   string                 `json:"operation"`
-	Parameters  map[string]interface{} `json:"parameters"`
+	ID        string                 `json:"job_id"`
+	Operation string                 `json:"operation"`
+	Payload   map[string]interface{} `json:"payload,omitempty"`
 	Status      string                 `json:"status"` // pending, dispatched, starting, computing, completed, failed, timeout, cancelled
 	Progress    float64                `json:"progress,omitempty"`
 	Result      interface{}            `json:"result,omitempty"`

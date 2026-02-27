@@ -83,48 +83,12 @@ func matchesMQTTPattern(pattern, topic string) bool {
 	return true
 }
 
-func TestJobParams_JSONRoundTrip(t *testing.T) {
-	original := JobParams{
-		JobID:     "job-abc",
-		Operation: "semantic_diffusion",
-		Parameters: map[string]interface{}{
-			"iterations": float64(100),
-			"threshold":  float64(0.01),
-		},
-		Timestamp: time.Unix(1700000000, 0).UTC(),
-		Timeout:   300,
-	}
-
-	data, err := json.Marshal(original)
-	if err != nil {
-		t.Fatalf("json.Marshal: %v", err)
-	}
-
-	var got JobParams
-	if err := json.Unmarshal(data, &got); err != nil {
-		t.Fatalf("json.Unmarshal: %v", err)
-	}
-
-	if got.JobID != original.JobID {
-		t.Errorf("JobID: got %q, want %q", got.JobID, original.JobID)
-	}
-	if got.Operation != original.Operation {
-		t.Errorf("Operation: got %q, want %q", got.Operation, original.Operation)
-	}
-	if got.Timeout != original.Timeout {
-		t.Errorf("Timeout: got %d, want %d", got.Timeout, original.Timeout)
-	}
-	if got.Timestamp.Unix() != original.Timestamp.Unix() {
-		t.Errorf("Timestamp: got %v, want %v", got.Timestamp.Unix(), original.Timestamp.Unix())
-	}
-}
-
 func TestJobResult_JSONRoundTrip(t *testing.T) {
 	original := JobResult{
-		JobID:      "job-xyz",
-		Status:     "completed",
-		DurationMS: 1234,
-		Timestamp:  time.Unix(1700000000, 0).UTC(),
+		JobID:     "job-xyz",
+		Success:   true,
+		WorkerID:  "test-worker-1",
+		Timestamp: time.Unix(1700000000, 0).UTC(),
 		Metrics: &Metrics{
 			GPUUtilization: 85.5,
 			MemoryUsedMB:   4096,
@@ -145,11 +109,11 @@ func TestJobResult_JSONRoundTrip(t *testing.T) {
 	if got.JobID != original.JobID {
 		t.Errorf("JobID: got %q, want %q", got.JobID, original.JobID)
 	}
-	if got.Status != original.Status {
-		t.Errorf("Status: got %q, want %q", got.Status, original.Status)
+	if got.Success != original.Success {
+		t.Errorf("Success: got %v, want %v", got.Success, original.Success)
 	}
-	if got.DurationMS != original.DurationMS {
-		t.Errorf("DurationMS: got %d, want %d", got.DurationMS, original.DurationMS)
+	if got.WorkerID != original.WorkerID {
+		t.Errorf("WorkerID: got %q, want %q", got.WorkerID, original.WorkerID)
 	}
 	if got.Metrics == nil {
 		t.Fatal("Metrics: got nil, want non-nil")

@@ -74,7 +74,7 @@ curl -X POST http://localhost:8080/compute \
   -H "Content-Type: application/json" \
   -d '{
     "operation": "my_operation",
-    "parameters": {
+    "payload": {
       "size": 512
     }
   }'
@@ -89,7 +89,7 @@ Submit async job. Returns immediately with job ID and `dispatched` status.
 ```json
 {
   "operation": "my_operation",
-  "parameters": { "size": 512 },
+  "payload": { "size": 512 },
   "priority": "normal"
 }
 ```
@@ -127,6 +127,26 @@ compute/jobs/{job_id}/status    # Status updates from worker
 compute/jobs/{job_id}/result    # Computation result from worker
 compute/jobs/{job_id}/logs      # Log output from worker
 ```
+
+### Worker Protocol
+
+**Params** (orchestrator → worker, QoS 1, retained):
+```json
+{"job_id": "uuid", ...payload_fields}
+```
+The `payload` from the HTTP request is merged with `job_id` at the top level.
+
+**Result** (worker → orchestrator, QoS 1):
+```json
+{
+  "job_id": "uuid",
+  "success": true,
+  "result": { ... },
+  "worker_id": "nomad-abc123",
+  "timestamp": "2026-02-21T10:00:00Z"
+}
+```
+`error` (string) and `metrics` are optional. `success: false` marks the job as failed.
 
 ## Configuration
 

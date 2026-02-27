@@ -74,8 +74,8 @@ func (m *Manager) handleResult(topic string, payload []byte) error {
 		return fmt.Errorf("unmarshal result failed: %w", err)
 	}
 
-	log.Printf("Successfully parsed result: JobID=%s, Status=%s, DurationMS=%d",
-		result.JobID, result.Status, result.DurationMS)
+	log.Printf("Successfully parsed result: JobID=%s, Success=%v, WorkerID=%s",
+		result.JobID, result.Success, result.WorkerID)
 
 	value, ok := m.jobs.Load(result.JobID)
 	if !ok {
@@ -84,7 +84,11 @@ func (m *Manager) handleResult(topic string, payload []byte) error {
 
 	job := value.(*Job)
 	now := time.Now()
-	job.Status = result.Status
+	if result.Success {
+		job.Status = "completed"
+	} else {
+		job.Status = "failed"
+	}
 	job.Result = result.Result
 	job.Error = result.Error
 	job.CompletedAt = &now
@@ -95,7 +99,7 @@ func (m *Manager) handleResult(topic string, payload []byte) error {
 	}
 
 	log.Printf("Job %s completed: status=%s duration=%dms",
-		result.JobID, result.Status, result.DurationMS)
+		result.JobID, job.Status, result.DurationMS)
 
 	// Notify any waiters
 	if job.resultChan != nil {
@@ -150,7 +154,7 @@ func (m *Manager) Submit(ctx context.Context, req *Request) (*Job, error) {
 	job := &Job{
 		ID:         jobID,
 		Operation:  req.Operation,
-		Parameters: req.Parameters,
+		Payload:    req.Payload,
 		Status:     "pending",
 		CreatedAt:  time.Now(),
 		resultChan: make(chan *mqtt.JobResult, 1),
@@ -158,73 +162,30 @@ func (m *Manager) Submit(ctx context.Context, req *Request) (*Job, error) {
 
 	m.jobs.Store(jobID, job)
 
-	// Step 1: Publish parameters to MQTT (RETAINED)
-	// For diffusion jobs, publish raw CSV data directly for compute worker
+	// Step 1: Publish params to MQTT (RETAINED)
+	// Format: {job_id: "...", ...payload_fields}
 	topics := mqtt.NewTopicBuilder(jobID)
 
-	if req.Operation == "diffusion" || req.Operation == "semantic_diffusion" {
-		// Extract anchor_data from parameters (try both parameter names)
-		var anchorData string
-		var ok bool
-
-		// Try "anchor_data" first (legacy format)
-		anchorData, ok = req.Parameters["anchor_data"].(string)
-		if !ok {
-			// Try "anchors" format
-			anchorData, ok = req.Parameters["anchors"].(string)
-		}
-
-		if !ok {
-			m.jobs.Delete(jobID)
-			return nil, fmt.Errorf("missing or invalid anchor_data/anchors parameter")
-		}
-
-		// Publish raw CSV data directly (compute worker expects this)
-		if err := m.mqttClient.Publish(topics.Params(), anchorData, true); err != nil {
-			m.jobs.Delete(jobID)
-			return nil, fmt.Errorf("mqtt publish params failed: %w", err)
-		}
-
-		log.Printf("Published anchor data for job %s (%d bytes)", jobID, len(anchorData))
-	} else {
-		// For other operations, publish full JSON structure
-		params := mqtt.JobParams{
-			JobID:      jobID,
-			Operation:  req.Operation,
-			Parameters: req.Parameters,
-			Timestamp:  job.CreatedAt,
-			Timeout:    int(m.config.DefaultTimeout.Seconds()),
-		}
-
-		if err := m.mqttClient.Publish(topics.Params(), params, true); err != nil {
-			m.jobs.Delete(jobID)
-			return nil, fmt.Errorf("mqtt publish params failed: %w", err)
-		}
-
-		log.Printf("Published parameters for job %s", jobID)
+	params := make(map[string]interface{})
+	for k, v := range req.Payload {
+		params[k] = v
 	}
+	params["job_id"] = jobID
+
+	if err := m.mqttClient.Publish(topics.Params(), params, true); err != nil {
+		m.jobs.Delete(jobID)
+		return nil, fmt.Errorf("mqtt publish params failed: %w", err)
+	}
+
+	log.Printf("Published params for job %s (%d payload fields)", jobID, len(req.Payload))
 
 	// Step 2: Dispatch to Nomad
 	meta := make(map[string]string)
-
-	// Pass the job_id so the worker can use it for MQTT topics
-	meta["job_id"] = jobID
-
+	if req.Operation != "" {
+		meta["operation"] = req.Operation
+	}
 	if req.Priority != "" {
 		meta["priority"] = req.Priority
-	}
-
-	// Pass parameters as metadata for environment variables
-	if operation, ok := req.Parameters["operation"].(float64); ok {
-		meta["operation"] = fmt.Sprintf("%d", int(operation))
-	} else if operation, ok := req.Parameters["operation"].(int); ok {
-		meta["operation"] = fmt.Sprintf("%d", operation)
-	}
-
-	if size, ok := req.Parameters["size"].(float64); ok {
-		meta["size"] = fmt.Sprintf("%d", int(size))
-	} else if size, ok := req.Parameters["size"].(int); ok {
-		meta["size"] = fmt.Sprintf("%d", size)
 	}
 
 	dispatchResult, err := m.nomad.Dispatch(jobID, meta)

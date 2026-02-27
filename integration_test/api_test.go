@@ -15,7 +15,7 @@ import (
 func TestSubmitJob_Async(t *testing.T) {
 	skipIfUnavailable(t)
 
-	body := `{"operation":"ping","parameters":{"test":true}}`
+	body := `{"operation":"ping","payload":{"test":true}}`
 	resp, err := httpClient.Post(orchestratorURL()+"/compute", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /compute: %v", err)
@@ -105,7 +105,7 @@ func TestListJobs_AfterSubmit(t *testing.T) {
 	skipIfUnavailable(t)
 
 	// Submit a job
-	body := `{"operation":"test","parameters":{}}`
+	body := `{"operation":"test","payload":{}}`
 	subResp, err := httpClient.Post(orchestratorURL()+"/compute", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /compute: %v", err)
@@ -152,7 +152,7 @@ func TestGetJob_Existing(t *testing.T) {
 	skipIfUnavailable(t)
 
 	// Submit a job
-	body := `{"operation":"test","parameters":{}}`
+	body := `{"operation":"test","payload":{}}`
 	subResp, err := httpClient.Post(orchestratorURL()+"/compute", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /compute: %v", err)
@@ -221,7 +221,7 @@ func TestCancelJob_Success(t *testing.T) {
 	skipIfUnavailable(t)
 
 	// Submit a job
-	body := `{"operation":"test","parameters":{}}`
+	body := `{"operation":"test","payload":{}}`
 	subResp, err := httpClient.Post(orchestratorURL()+"/compute", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /compute: %v", err)

@@ -1,566 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPU Compute Orchestrator</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            padding: 20px;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-
-        .card {
-            background: #2a2a2a;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-            border: 1px solid #3a3a3a;
-        }
-
-        .card h2 {
-            margin-bottom: 20px;
-            color: #667eea;
-            font-size: 1.5em;
-        }
-
-        .upload-area {
-            border: 2px dashed #667eea;
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #1f1f1f;
-        }
-
-        .upload-area:hover {
-            border-color: #764ba2;
-            background: #252525;
-        }
-
-        .upload-area.dragover {
-            border-color: #764ba2;
-            background: #2d2d2d;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .file-info {
-            margin-top: 15px;
-            padding: 10px;
-            background: #1f1f1f;
-            border-radius: 6px;
-            display: none;
-        }
-
-        .file-info.visible {
-            display: block;
-        }
-
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            font-weight: 600;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .status {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 600;
-            display: inline-block;
-            margin-left: 10px;
-        }
-
-        .status.pending { background: #ffa726; color: #000; }
-        .status.dispatched { background: #42a5f5; }
-        .status.computing { background: #66bb6a; }
-        .status.completed { background: #4caf50; }
-        .status.failed { background: #ef5350; }
-
-        .jobs-list {
-            margin-top: 20px;
-        }
-
-        .job-item {
-            background: #1f1f1f;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .job-item:hover {
-            background: #252525;
-            transform: translateX(5px);
-        }
-
-        .job-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .job-id {
-            font-family: 'Courier New', monospace;
-            color: #667eea;
-            font-weight: 600;
-        }
-
-        .job-details {
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
-
-        .results {
-            margin-top: 20px;
-            display: none;
-        }
-
-        .results.visible {
-            display: block;
-        }
-
-        .pattern-card {
-            background: #1f1f1f;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid #764ba2;
-        }
-
-        .pattern-name {
-            font-size: 1.3em;
-            color: #764ba2;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .pattern-description {
-            margin-bottom: 10px;
-            line-height: 1.8;
-        }
-
-        .pattern-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #3a3a3a;
-        }
-
-        .stat {
-            background: #252525;
-            padding: 10px;
-            border-radius: 6px;
-        }
-
-        .stat-label {
-            font-size: 0.85em;
-            opacity: 0.7;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 1.1em;
-            font-weight: 600;
-            color: #667eea;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #667eea;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 0.8s linear infinite;
-            margin-left: 10px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #ef5350;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .error.visible {
-            display: block;
-        }
-
-        pre {
-            background: #1f1f1f;
-            padding: 15px;
-            border-radius: 6px;
-            overflow-x: auto;
-            font-size: 0.9em;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPU Compute Orchestrator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.4em; color: #aaa; font-weight: 400; margin-bottom: 24px; }
+    h1 span { color: #7eb8f7; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: #242424;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card h2 { font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 14px; }
+    label { display: block; font-size: 0.82em; color: #999; margin-bottom: 5px; margin-top: 12px; }
+    label:first-of-type { margin-top: 0; }
+    input[type=text], textarea {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-family: 'SFMono-Regular', 'Consolas', monospace;
+      font-size: 0.85em;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type=text]:focus, textarea:focus { border-color: #7eb8f7; }
+    textarea { resize: vertical; min-height: 100px; }
+    .error-msg { color: #f07070; font-size: 0.78em; margin-top: 5px; display: none; }
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 9px;
+      background: #2d5a9e;
+      color: #e8e8e8;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.88em;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #3a6dbf; }
+    button:disabled { background: #333; color: #666; cursor: default; }
+    .submit-msg { margin-top: 8px; font-size: 0.8em; color: #888; text-align: center; }
+    /* Job list */
+    .job-list { overflow-y: auto; max-height: 520px; }
+    .job-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.82em;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+      transition: background 0.1s;
+    }
+    .job-row:hover { background: #2e2e2e; }
+    .job-row.selected { background: #1d2d40; border-color: #2d5a9e; }
+    .job-id { font-family: monospace; color: #aaa; font-size: 0.9em; }
+    .job-op { color: #c8a0f0; }
+    .status { font-size: 0.75em; font-weight: 600; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+    .status-pending    { background: #2a2a0a; color: #c8c060; }
+    .status-dispatched { background: #0a1a2a; color: #60a8c8; }
+    .status-starting   { background: #0a1a2a; color: #60a8c8; }
+    .status-computing  { background: #0a1a2a; color: #60c8c8; }
+    .status-completed  { background: #0a2a0a; color: #60c860; }
+    .status-failed     { background: #2a0a0a; color: #c86060; }
+    .status-timeout    { background: #2a1a0a; color: #c89060; }
+    .status-cancelled  { background: #1a1a1a; color: #888; }
+    .empty-msg { color: #555; font-size: 0.82em; text-align: center; padding: 30px 0; }
+    .refresh-note { font-size: 0.72em; color: #555; text-align: right; margin-top: 8px; }
+    /* Detail panel */
+    .detail-card { grid-column: 1 / -1; }
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .detail-close { background: none; border: 1px solid #444; border-radius: 4px; color: #888; font-size: 0.78em; padding: 3px 9px; cursor: pointer; margin-top: 0; width: auto; }
+    .detail-close:hover { color: #ccc; background: #2e2e2e; }
+    pre {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 12px;
+      font-size: 0.8em;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #c8daf0;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚀 GPU Compute Orchestrator</h1>
-            <div class="subtitle">Semantic Anchor Diffusion with LLM Pattern Transcoding</div>
-        </header>
+  <h1><span>GPU Compute Orchestrator</span> — Dev Console</h1>
 
-        <div class="card">
-            <h2>📤 Submit Job</h2>
-
-            <div class="upload-area" id="uploadArea">
-                <div style="font-size: 3em; margin-bottom: 10px;">📁</div>
-                <div style="font-size: 1.2em; margin-bottom: 10px;">
-                    Drop anchor CSV file here or click to browse
-                </div>
-                <div style="opacity: 0.7;">
-                    Supports files up to 10MB
-                </div>
-                <input type="file" id="fileInput" accept=".csv,text/csv">
-            </div>
-
-            <div class="file-info" id="fileInfo">
-                <strong>Selected file:</strong> <span id="fileName"></span><br>
-                <strong>Size:</strong> <span id="fileSize"></span>
-            </div>
-
-            <div style="margin-top: 20px;">
-                <button id="submitBtn" disabled>Submit Job</button>
-                <span id="submitStatus"></span>
-            </div>
-
-            <div class="error" id="errorMsg"></div>
-        </div>
-
-        <div class="card">
-            <h2>📊 Active Jobs</h2>
-            <div id="jobsList" class="jobs-list">
-                <div style="opacity: 0.5; text-align: center; padding: 20px;">
-                    No active jobs. Submit a job to get started.
-                </div>
-            </div>
-        </div>
-
-        <div class="card results" id="resultsCard">
-            <h2>✨ Pattern Results</h2>
-            <div id="resultsContent"></div>
-        </div>
+  <div class="grid">
+    <!-- Submit form -->
+    <div class="card">
+      <h2>Submit Job</h2>
+      <label>Operation</label>
+      <input type="text" id="operation" placeholder="e.g. my_operation" value="">
+      <label>Payload (JSON)</label>
+      <textarea id="payload" placeholder='{"key": "value"}'></textarea>
+      <div class="error-msg" id="payload-error">Invalid JSON</div>
+      <button id="submit-btn" onclick="submitJob()">Submit</button>
+      <div class="submit-msg" id="submit-msg"></div>
     </div>
 
-    <script>
-        const API_BASE = '';  // Same origin
-        let selectedFile = null;
-        let jobs = {};
-        let pollInterval = null;
+    <!-- Job list -->
+    <div class="card">
+      <h2>Jobs</h2>
+      <div class="job-list" id="job-list">
+        <div class="empty-msg">No jobs yet</div>
+      </div>
+      <div class="refresh-note">Auto-refresh every 2s</div>
+    </div>
 
-        // File upload handling
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
-        const submitBtn = document.getElementById('submitBtn');
+    <!-- Detail panel (hidden until a job is selected) -->
+    <div class="card detail-card" id="detail-card" style="display:none">
+      <div class="detail-header">
+        <h2 id="detail-title">Job Detail</h2>
+        <button class="detail-close" onclick="closeDetail()">✕ Close</button>
+      </div>
+      <pre id="detail-pre"></pre>
+    </div>
+  </div>
 
-        uploadArea.addEventListener('click', () => fileInput.click());
+  <script>
+    let selectedJobID = null;
 
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
+    function statusClass(s) {
+      return 'status status-' + (s || 'pending');
+    }
+
+    async function loadJobs() {
+      try {
+        const r = await fetch('/jobs');
+        if (!r.ok) return;
+        const data = await r.json();
+        const jobs = data.jobs || [];
+        const el = document.getElementById('job-list');
+
+        if (jobs.length === 0) {
+          el.innerHTML = '<div class="empty-msg">No jobs yet</div>';
+          return;
+        }
+
+        // Sort newest first
+        jobs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        el.innerHTML = jobs.map(j => {
+          const idShort = (j.job_id || '').substring(0, 8);
+          const selected = j.job_id === selectedJobID ? ' selected' : '';
+          return `<div class="job-row${selected}" onclick="selectJob('${j.job_id}')">
+            <div>
+              <div class="job-op">${j.operation || '—'}</div>
+              <div class="job-id">${idShort}…</div>
+            </div>
+            <div></div>
+            <span class="${statusClass(j.status)}">${j.status || 'unknown'}</span>
+          </div>`;
+        }).join('');
+
+        // Refresh selected job detail if visible
+        if (selectedJobID) {
+          const found = jobs.find(j => j.job_id === selectedJobID);
+          if (found) showDetail(found);
+        }
+      } catch (e) {
+        // silently ignore network errors during polling
+      }
+    }
+
+    async function selectJob(jobID) {
+      selectedJobID = jobID;
+      try {
+        const r = await fetch('/jobs/' + jobID);
+        if (!r.ok) return;
+        const job = await r.json();
+        showDetail(job);
+        loadJobs(); // refresh list to update selection highlight
+      } catch (e) {}
+    }
+
+    function showDetail(job) {
+      const card = document.getElementById('detail-card');
+      const pre = document.getElementById('detail-pre');
+      const title = document.getElementById('detail-title');
+      card.style.display = '';
+      title.textContent = 'Job ' + (job.job_id || '').substring(0, 8) + '… — ' + (job.status || '');
+      pre.textContent = JSON.stringify(job, null, 2);
+    }
+
+    function closeDetail() {
+      selectedJobID = null;
+      document.getElementById('detail-card').style.display = 'none';
+      loadJobs();
+    }
+
+    async function submitJob() {
+      const op = document.getElementById('operation').value.trim();
+      const payloadStr = document.getElementById('payload').value.trim();
+      const errEl = document.getElementById('payload-error');
+      const msgEl = document.getElementById('submit-msg');
+      const btn = document.getElementById('submit-btn');
+
+      errEl.style.display = 'none';
+      msgEl.textContent = '';
+
+      let payload = {};
+      if (payloadStr) {
+        try {
+          payload = JSON.parse(payloadStr);
+        } catch (e) {
+          errEl.style.display = 'block';
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      msgEl.textContent = 'Submitting…';
+
+      try {
+        const r = await fetch('/compute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operation: op, payload }),
         });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            handleFile(e.dataTransfer.files[0]);
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            handleFile(e.target.files[0]);
-        });
-
-        function handleFile(file) {
-            if (!file) return;
-
-            if (!file.name.endsWith('.csv')) {
-                showError('Please select a CSV file');
-                return;
-            }
-
-            selectedFile = file;
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileSize').textContent = formatBytes(file.size);
-            fileInfo.classList.add('visible');
-            submitBtn.disabled = false;
+        const data = await r.json();
+        if (r.ok) {
+          msgEl.textContent = 'Submitted: ' + (data.job_id || '').substring(0, 12) + '…';
+          selectedJobID = data.job_id;
+        } else {
+          msgEl.textContent = 'Error: ' + (data.error || r.status);
         }
-
-        submitBtn.addEventListener('click', submitJob);
-
-        async function submitJob() {
-            if (!selectedFile) return;
-
-            submitBtn.disabled = true;
-            document.getElementById('submitStatus').innerHTML = '<span class="loading"></span>';
-
-            try {
-                // Read file content
-                const content = await readFileContent(selectedFile);
-
-                // Submit job
-                const response = await fetch('/compute', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        operation: 'diffusion',
-                        parameters: {
-                            anchor_data: content,
-                            iterations: 500,
-                            convergence_threshold: 0.0001
-                        },
-                        priority: 'normal'
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-                }
-
-                const job = await response.json();
-                jobs[job.job_id] = job;
-
-                document.getElementById('submitStatus').innerHTML =
-                    `<span class="status completed">✓ Submitted</span>`;
-
-                setTimeout(() => {
-                    document.getElementById('submitStatus').innerHTML = '';
-                    submitBtn.disabled = false;
-                }, 2000);
-
-                updateJobsList();
-                startPolling();
-
-            } catch (error) {
-                showError(`Failed to submit job: ${error.message}`);
-                submitBtn.disabled = false;
-                document.getElementById('submitStatus').innerHTML = '';
-            }
-        }
-
-        function readFileContent(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(new Error('Failed to read file'));
-                reader.readAsText(file);
-            });
-        }
-
-        function updateJobsList() {
-            const jobsList = document.getElementById('jobsList');
-            const jobsArray = Object.values(jobs);
-
-            if (jobsArray.length === 0) {
-                jobsList.innerHTML = '<div style="opacity: 0.5; text-align: center; padding: 20px;">No active jobs.</div>';
-                return;
-            }
-
-            jobsList.innerHTML = jobsArray.map(job => `
-                <div class="job-item" onclick="showJobDetails('${job.job_id}')">
-                    <div class="job-header">
-                        <span class="job-id">${job.job_id}</span>
-                        <span class="status ${job.status}">${job.status}</span>
-                    </div>
-                    <div class="job-details">
-                        <strong>Operation:</strong> ${job.operation} |
-                        <strong>Created:</strong> ${new Date(job.created_at).toLocaleString()}
-                        ${job.duration_ms ? ` | <strong>Duration:</strong> ${(job.duration_ms / 1000).toFixed(1)}s` : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function showJobDetails(jobId) {
-            try {
-                const response = await fetch(`/jobs/${jobId}`);
-                if (!response.ok) throw new Error('Failed to fetch job details');
-
-                const job = await response.json();
-                jobs[jobId] = job;
-
-                if (job.status === 'completed' && job.result) {
-                    displayResults(job);
-                }
-
-                updateJobsList();
-            } catch (error) {
-                showError(`Failed to load job details: ${error.message}`);
-            }
-        }
-
-        function displayResults(job) {
-            const resultsCard = document.getElementById('resultsCard');
-            const resultsContent = document.getElementById('resultsContent');
-
-            // Check if result has patterns
-            const patterns = job.result?.patterns || [];
-
-            if (patterns.length === 0) {
-                resultsContent.innerHTML = '<div style="opacity: 0.7;">No patterns found in results.</div>';
-                resultsCard.classList.add('visible');
-                return;
-            }
-
-            resultsContent.innerHTML = patterns.map((pattern, idx) => `
-                <div class="pattern-card">
-                    <div class="pattern-name">${pattern.name || `Pattern ${idx + 1}`}</div>
-                    <div class="pattern-description">${pattern.description || 'No description available'}</div>
-                    <div class="pattern-stats">
-                        <div class="stat">
-                            <div class="stat-label">Confidence</div>
-                            <div class="stat-value">${pattern.confidence || 'N/A'}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Anchors</div>
-                            <div class="stat-value">${pattern.anchor_count || 'N/A'}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Time of Day</div>
-                            <div class="stat-value">${pattern.temporal_pattern?.time_of_day || 'N/A'}</div>
-                        </div>
-                        <div class="stat">
-                            <div class="stat-label">Chain ID</div>
-                            <div class="stat-value">${pattern.chain_id || 'N/A'}</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            resultsCard.classList.add('visible');
-        }
-
-        function startPolling() {
-            if (pollInterval) return;
-
-            pollInterval = setInterval(async () => {
-                const activeJobs = Object.values(jobs).filter(j =>
-                    !['completed', 'failed', 'cancelled'].includes(j.status)
-                );
-
-                if (activeJobs.length === 0) {
-                    stopPolling();
-                    return;
-                }
-
-                for (const job of activeJobs) {
-                    await showJobDetails(job.job_id);
-                }
-            }, 2000);
-        }
-
-        function stopPolling() {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                pollInterval = null;
-            }
-        }
-
-        function showError(message) {
-            const errorMsg = document.getElementById('errorMsg');
-            errorMsg.textContent = message;
-            errorMsg.classList.add('visible');
-            setTimeout(() => errorMsg.classList.remove('visible'), 5000);
-        }
-
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-        }
-
-        // Load existing jobs on page load
-        async function loadJobs() {
-            try {
-                const response = await fetch('/jobs');
-                if (response.ok) {
-                    const data = await response.json();
-                    data.jobs.forEach(job => jobs[job.job_id] = job);
-                    updateJobsList();
-
-                    if (Object.values(jobs).some(j => !['completed', 'failed', 'cancelled'].includes(j.status))) {
-                        startPolling();
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load jobs:', error);
-            }
-        }
-
         loadJobs();
-    </script>
+      } catch (e) {
+        msgEl.textContent = 'Request failed: ' + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Initial load + poll
+    loadJobs();
+    setInterval(loadJobs, 2000);
+  </script>
 </body>
 </html>

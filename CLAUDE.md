@@ -31,8 +31,18 @@ compute/jobs/{job_id}/result    # Computation result from worker
 compute/jobs/{job_id}/logs      # Log output from worker
 ```
 
+## Worker Protocol
+Params (orchestrator → worker, retained): `{"job_id": "uuid", ...payload_fields_from_request}`
+
+Result (worker → orchestrator):
+```json
+{"job_id": "uuid", "success": true, "result": {...}, "worker_id": "...", "timestamp": "..."}
+```
+`error` (string), `duration_ms` (int), `metrics` are optional. Workers must send `success: bool`,
+not the old `status: string` format.
+
 ## Constraints
 - Compute workers are NOT in this repo — they live in their own repositories and deploy via Nomad + Singularity/Docker
-- `semantic_diffusion` / `diffusion` jobs publish raw CSV (Jeeves Anchor Export header format); all other operations publish JSON `JobParams`
-- Nomad workers are parameterized batch jobs, dispatched via Nomad HTTP API with `job_id` as metadata
+- All job types publish `{"job_id": "...", ...payload_fields}` to the params topic (flat merge, JSON)
+- Nomad workers are parameterized batch jobs, dispatched via Nomad HTTP API with `job_id` + `operation` as metadata
 - GPU nodes: Ubuntu 24.04 LTS, AMD ROCm 7.0+, AMD Radeon AI Pro R9700 (RDNA 4), Nomad client with GPU fingerprinting

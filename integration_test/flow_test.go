@@ -20,7 +20,7 @@ import (
 type FakeWorker struct {
 	client  pahomqtt.Client
 	mu      sync.Mutex
-	results map[string]string // job_id → status to publish
+	results map[string]bool // "*" → success bool
 	t       *testing.T
 }
 
@@ -30,7 +30,7 @@ func newFakeWorker(t *testing.T) *FakeWorker {
 	t.Helper()
 
 	fw := &FakeWorker{
-		results: make(map[string]string),
+		results: make(map[string]bool),
 		t:       t,
 	}
 
@@ -65,12 +65,12 @@ func newFakeWorker(t *testing.T) *FakeWorker {
 	return fw
 }
 
-// SetResult configures what status the fake worker should publish when it receives params
-// for any job. Call before submitting the job.
-func (fw *FakeWorker) SetResult(status string) {
+// SetResult configures whether the fake worker should publish success or failure.
+// Call before submitting the job.
+func (fw *FakeWorker) SetResult(success bool) {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
-	fw.results["*"] = status
+	fw.results["*"] = success
 }
 
 // onParams is called when the fake worker receives a params message.
@@ -87,24 +87,24 @@ func (fw *FakeWorker) onParams(client pahomqtt.Client, msg pahomqtt.Message) {
 	jobID := parts[2]
 
 	fw.mu.Lock()
-	status, ok := fw.results["*"]
+	success, ok := fw.results["*"]
 	fw.mu.Unlock()
 
 	if !ok {
-		status = "completed"
+		success = true
 	}
 
-	fw.publishResult(jobID, status)
+	fw.publishResult(jobID, success)
 }
 
-func (fw *FakeWorker) publishResult(jobID, status string) {
+func (fw *FakeWorker) publishResult(jobID string, success bool) {
 	result := map[string]interface{}{
-		"job_id":      jobID,
-		"status":      status,
-		"duration_ms": 100,
-		"timestamp":   time.Now().Format(time.RFC3339),
+		"job_id":    jobID,
+		"success":   success,
+		"worker_id": "fake-worker",
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	}
-	if status == "failed" {
+	if !success {
 		result["error"] = "compute failed (simulated)"
 	} else {
 		result["result"] = map[string]bool{"test": true}
@@ -121,7 +121,7 @@ func (fw *FakeWorker) publishResult(jobID, status string) {
 	if err := token.Error(); err != nil {
 		fw.t.Logf("fake worker: publish result error for job %s: %v", jobID, err)
 	}
-	fw.t.Logf("fake worker: published %s result for job %s", status, jobID)
+	fw.t.Logf("fake worker: published success=%v result for job %s", success, jobID)
 }
 
 func TestFullFlow_JobCompletion(t *testing.T) {
@@ -129,13 +129,13 @@ func TestFullFlow_JobCompletion(t *testing.T) {
 
 	// Start fake worker BEFORE submitting the job
 	fw := newFakeWorker(t)
-	fw.SetResult("completed")
+	fw.SetResult(true)
 
 	// Give the subscription a moment to be established
 	time.Sleep(200 * time.Millisecond)
 
 	// Submit job via /compute/sync (synchronous, waits for result)
-	body := `{"operation":"test","parameters":{"test":true},"timeout":10000000000}`
+	body := `{"operation":"test","payload":{"test":true},"timeout":10000000000}`
 	resp, err := httpClient.Post(orchestratorURL()+"/compute/sync", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /compute/sync: %v", err)
@@ -167,12 +167,12 @@ func TestFullFlow_JobFailure(t *testing.T) {
 
 	// Start fake worker that reports failure
 	fw := newFakeWorker(t)
-	fw.SetResult("failed")
+	fw.SetResult(false)
 
 	// Give the subscription a moment to be established
 	time.Sleep(200 * time.Millisecond)
 
-	body := `{"operation":"test","parameters":{"test":true},"timeout":10000000000}`
+	body := `{"operation":"test","payload":{"test":true},"timeout":10000000000}`
 	resp, err := httpClient.Post(orchestratorURL()+"/compute/sync", "application/json", strings.NewReader(body))
 	if err != nil {
 		t.Fatalf("POST /compute/sync: %v", err)

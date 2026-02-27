@@ -69,14 +69,14 @@ func TestRequest_Defaults(t *testing.T) {
 
 	// Zero value access should not panic
 	_ = r.Operation
-	_ = r.Parameters
+	_ = r.Payload
 	_ = r.Priority
 	_ = r.Timeout
 
 	if r.Operation != "" {
 		t.Errorf("Operation: expected empty string, got %q", r.Operation)
 	}
-	if r.Parameters != nil {
-		t.Errorf("Parameters: expected nil, got %v", r.Parameters)
+	if r.Payload != nil {
+		t.Errorf("Payload: expected nil, got %v", r.Payload)
 	}
 }
