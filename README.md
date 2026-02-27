@@ -44,7 +44,7 @@ Distributed GPU compute orchestration using **Go** for the API and dispatch laye
 - **Language**: Go 1.23
 - **Function**: HTTP API server, MQTT client, Nomad dispatcher, LLM pattern aggregation
 - **Container**: Docker (multi-stage build)
-- **Location**: `go-orchestrator/`
+- **Location**: Project root (`go.mod`, `main.go`, `pkg/`, `cmd/`, `Makefile`, `Dockerfile`)
 
 ### 2. MQTT Broker
 - **Service**: Eclipse Mosquitto
@@ -84,7 +84,6 @@ The semantic-n-body worker (Julia) lives in its own repository:
 ### 1. Build Go Orchestrator
 
 ```bash
-cd go-orchestrator
 make build
 # Or build Docker image
 make docker-build

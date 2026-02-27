@@ -35,7 +35,7 @@ services:
       - POSTGRES_PASSWORD=postgres_dev_password  # Change in production!
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./go-orchestrator/migrations:/docker-entrypoint-initdb.d:ro
+      - ./migrations:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     networks:
       - gpu-compute-net
@@ -54,8 +54,8 @@ services:
   # DEV MODE: Custom image with embedded Fortran worker for raw_exec
   nomad-server:
     build:
-      context: .
-      dockerfile: nomad-server/Dockerfile.ubuntu
+      context: nomad-server
+      dockerfile: Dockerfile
     container_name: nomad-server
     privileged: true  # Required for cgroup access on Mac Docker Desktop
     ports:
@@ -98,7 +98,7 @@ services:
   # Go Orchestrator (with LLM transcoding)
   orchestrator:
     build:
-      context: ./go-orchestrator
+      context: .
       dockerfile: Dockerfile
     container_name: gpu-orchestrator
     ports:
@@ -138,7 +138,7 @@ services:
     networks:
       - gpu-compute-net
     volumes:
-      - ./go-orchestrator/configs:/app/configs:ro
+      - ./configs:/app/configs:ro
 
   # Optional: pgAdmin (database UI)
   pgadmin:

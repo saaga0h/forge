@@ -51,7 +51,7 @@ services:
   # Go Orchestrator
   orchestrator:
     build:
-      context: ./go-orchestrator
+      context: .
       dockerfile: Dockerfile
     container_name: gpu-orchestrator
     ports:

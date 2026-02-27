@@ -2,13 +2,12 @@
 
 ## Build & Test
 ```bash
-cd go-orchestrator
 make build          # → bin/orchestrator
 make test           # go test -v -race ./...
 make fmt            # go fmt + go vet
 make lint           # golangci-lint
 ```
-Go 1.23 required.
+Go 1.23 required. Run from project root (go.mod is at root).
 
 ## Dev Stack
 ```bash
@@ -16,6 +15,9 @@ docker-compose up -d                                # basic (MQTT + Nomad + orch
 docker-compose -f docker-compose.enhanced.yaml up -d  # full (adds PostgreSQL + Ollama)
 ```
 Enhanced stack expects Ollama on host at localhost:11434. Orchestrator connects via host.docker.internal:11434.
+Enhanced stack builds a clean Nomad dev image (`nomad-server/Dockerfile`) that auto-registers `nomad-jobs/gpu-compute-dev.nomad.hcl` as a dispatch placeholder (raw_exec sleep; real workers live in compute repos).
+
+`configs/` holds both the MQTT broker config (`mosquitto.conf`) and the orchestrator app configs (`config.yaml`, `llm.yaml`). Docker Compose mounts the whole directory into the orchestrator container at `/app/configs`.
 
 ## MQTT Topics
 ```
