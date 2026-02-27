@@ -6,24 +6,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"sync"
 	"time"
 
 	"gpu-compute-orchestrator/pkg/mqtt"
 	"gpu-compute-orchestrator/pkg/nomad"
-	"gpu-compute-orchestrator/pkg/patterns"
 
 	"github.com/google/uuid"
 )
 
 type Manager struct {
-	mqttClient   *mqtt.Client
-	nomad        *nomad.Dispatcher
-	jobs         sync.Map // map[string]*Job
-	config       *Config
-	llmClient    *patterns.LLMClient
-	patternCache *patterns.Cache
+	mqttClient *mqtt.Client
+	nomad      *nomad.Dispatcher
+	jobs       sync.Map // map[string]*Job
+	config     *Config
 }
 
 type Config struct {
@@ -39,28 +35,10 @@ func NewManager(mqttClient *mqtt.Client, nomadDispatcher *nomad.Dispatcher, conf
 		}
 	}
 
-	// Initialize pattern processing components
-	cache := patterns.NewCache(720 * time.Hour) // 30 days TTL
-
-	// Get LLM configuration from environment variables with defaults
-	ollamaURL := os.Getenv("OLLAMA_URL")
-	if ollamaURL == "" {
-		ollamaURL = "http://host.docker.internal:11434"
-	}
-
-	ollamaModel := os.Getenv("OLLAMA_MODEL")
-	if ollamaModel == "" {
-		ollamaModel = "qwen2.5:7b"
-	}
-
-	llmClient := patterns.NewLLMClient(ollamaURL, ollamaModel, cache)
-
 	mgr := &Manager{
-		mqttClient:   mqttClient,
-		nomad:        nomadDispatcher,
-		config:       config,
-		llmClient:    llmClient,
-		patternCache: cache,
+		mqttClient: mqttClient,
+		nomad:      nomadDispatcher,
+		config:     config,
 	}
 
 	// Subscribe to result and status topics
@@ -118,11 +96,6 @@ func (m *Manager) handleResult(topic string, payload []byte) error {
 
 	log.Printf("Job %s completed: status=%s duration=%dms",
 		result.JobID, result.Status, result.DurationMS)
-
-	// Process semantic chains if job completed successfully
-	if result.Status == "completed" && result.Result != nil {
-		go m.processSemanticChains(result.JobID, result.Result)
-	}
 
 	// Notify any waiters
 	if job.resultChan != nil {
@@ -193,14 +166,14 @@ func (m *Manager) Submit(ctx context.Context, req *Request) (*Job, error) {
 		// Extract anchor_data from parameters (try both parameter names)
 		var anchorData string
 		var ok bool
-		
+
 		// Try "anchor_data" first (legacy format)
 		anchorData, ok = req.Parameters["anchor_data"].(string)
 		if !ok {
-			// Try "anchors" format (new format from anchors package)
+			// Try "anchors" format
 			anchorData, ok = req.Parameters["anchors"].(string)
 		}
-		
+
 		if !ok {
 			m.jobs.Delete(jobID)
 			return nil, fmt.Errorf("missing or invalid anchor_data/anchors parameter")
@@ -330,141 +303,4 @@ func (m *Manager) CancelJob(jobID string) error {
 
 	log.Printf("Cancelled job %s", jobID)
 	return nil
-}
-
-// processSemanticChains processes the raw semantic diffusion results through the LLM transcoding layer
-func (m *Manager) processSemanticChains(jobID string, rawResult interface{}) {
-	log.Printf("Processing semantic chains for job %s", jobID)
-
-	// Parse the raw result into structured format
-	resultData, err := m.parseSemanticResult(rawResult)
-	if err != nil {
-		log.Printf("Failed to parse semantic result for job %s: %v", jobID, err)
-		return
-	}
-
-	log.Printf("Parsed %d chains for job %s", len(resultData.Chains), jobID)
-
-	// Process each chain through the LLM
-	for _, chain := range resultData.Chains {
-		go func(chain patterns.Chain) {
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-			defer cancel()
-
-			// Note: In a real implementation, we would need anchor data to aggregate statistics
-			// For now, we'll create mock statistics based on the chain data
-			stats := m.createMockChainStatistics(chain, resultData)
-
-			// Transcode through LLM
-			pattern, err := m.llmClient.TranscodeChain(ctx, stats)
-			if err != nil {
-				log.Printf("Failed to transcode chain %d for job %s: %v", chain.ChainID, jobID, err)
-				return
-			}
-
-			log.Printf("Generated pattern for chain %d (job %s): %s",
-				chain.ChainID, jobID, pattern.Name)
-
-			// TODO: Store pattern in database
-			// For now, just log the result
-			log.Printf("Pattern Description: %s", pattern.Description)
-			log.Printf("Intent: %s", pattern.Intent)
-			log.Printf("Confidence: %s", pattern.Confidence)
-		}(chain)
-	}
-}
-
-// parseSemanticResult converts the raw interface{} result into structured chain data
-func (m *Manager) parseSemanticResult(rawResult interface{}) (*patterns.DiffusionResult, error) {
-	// Convert to JSON and back to get proper typing
-	jsonData, err := json.Marshal(rawResult)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal result: %w", err)
-	}
-
-	// First, try to extract basic info
-	var basicResult struct {
-		Anchors          int     `json:"anchors"`
-		Chains           int     `json:"chains"`
-		Iterations       int     `json:"iterations"`
-		Convergence      float64 `json:"convergence"`
-		ChainAssignments []struct {
-			ChainID   int      `json:"chain_id"`
-			AnchorIDs []string `json:"anchor_ids"`
-		} `json:"chain_assignments"`
-	}
-
-	if err := json.Unmarshal(jsonData, &basicResult); err != nil {
-		return nil, fmt.Errorf("failed to parse basic result structure: %w", err)
-	}
-
-	// Convert to patterns.DiffusionResult format
-	result := &patterns.DiffusionResult{
-		JobID:            "", // Will be set by caller
-		Status:           "completed",
-		AnchorsProcessed: basicResult.Anchors,
-		ChainsFound:      basicResult.Chains,
-		Iterations:       basicResult.Iterations,
-		Convergence:      basicResult.Convergence,
-		Chains:           make([]patterns.Chain, len(basicResult.ChainAssignments)),
-	}
-
-	for i, assignment := range basicResult.ChainAssignments {
-		result.Chains[i] = patterns.Chain{
-			ChainID:     assignment.ChainID,
-			AnchorIDs:   assignment.AnchorIDs,
-			AnchorCount: len(assignment.AnchorIDs),
-		}
-	}
-
-	return result, nil
-}
-
-// createMockChainStatistics creates mock statistics for a chain when we don't have anchor data
-// TODO: In a full implementation, this would use real anchor data from the job parameters
-func (m *Manager) createMockChainStatistics(chain patterns.Chain, result *patterns.DiffusionResult) patterns.ChainStatistics {
-	// Create mock statistics based on chain size and IDs
-	now := time.Now()
-
-	stats := patterns.ChainStatistics{
-		ChainID:     chain.ChainID,
-		AnchorCount: chain.AnchorCount,
-		TimeRange: patterns.TimeRangeStats{
-			EarliestTimestamp: now.Add(-2 * time.Hour).Unix(),
-			LatestTimestamp:   now.Unix(),
-			SpanHours:         2.0,
-			Occurrences:       1,
-		},
-		LocationStats: map[string]int{
-			"bedroom":  chain.AnchorCount / 3,
-			"kitchen":  chain.AnchorCount / 3,
-			"bathroom": chain.AnchorCount / 3,
-		},
-		TemporalPattern: patterns.TemporalStats{
-			AvgHourOfDay:    7.5, // Morning routine
-			DayDistribution: map[string]int{"weekday": 5, "weekend": 2},
-			TimeOfDay:       "morning",
-		},
-		Sequence: []patterns.LocationTransition{
-			{From: "bedroom", To: "bathroom", Count: 1, AvgDuration: 5.0},
-			{From: "bathroom", To: "kitchen", Count: 1, AvgDuration: 10.0},
-		},
-		DimensionAvgs: patterns.DimensionAverages{
-			Temporal: []float64{0.5, 0.3, 0.2},
-			Spatial:  []float64{0.4, 0.4, 0.2},
-			Activity: []float64{0.6, 0.2, 0.2},
-		},
-		SampleAnchors: make([]patterns.AnchorSummary, min(3, len(chain.AnchorIDs))),
-	}
-
-	// Create sample anchors
-	for i := 0; i < min(3, len(chain.AnchorIDs)); i++ {
-		stats.SampleAnchors[i] = patterns.AnchorSummary{
-			ID:        chain.AnchorIDs[i],
-			Timestamp: now.Add(time.Duration(-i) * 15 * time.Minute),
-			Location:  []string{"bedroom", "bathroom", "kitchen"}[i%3],
-		}
-	}
-
-	return stats
 }

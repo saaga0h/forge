@@ -1,4 +1,4 @@
-.PHONY: help build run test clean docker-build docker-push deps
+.PHONY: help build run test test-unit test-integration test-all clean docker-build docker-push deps
 
 APP_NAME := gpu-compute-orchestrator
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -18,8 +18,20 @@ build: ## Build binary
 run: ## Run locally
 	go run main.go
 
-test: ## Run tests
-	go test -v -race -coverprofile=coverage.out ./...
+test: ## Run unit tests with race detector and coverage
+	go test -v -race -coverprofile=coverage.out ./pkg/... ./...
+
+test-unit: ## Run unit tests only (no external dependencies)
+	go test -v -race -coverprofile=coverage.out ./pkg/...
+
+test-integration: ## Run integration tests (requires docker-compose.test.yaml stack)
+	docker compose -f docker-compose.test.yaml up -d --wait
+	go test -tags integration -v -timeout 60s ./integration_test/ ; \
+	EXIT_CODE=$$? ; \
+	docker compose -f docker-compose.test.yaml down ; \
+	exit $$EXIT_CODE
+
+test-all: test-unit test-integration ## Run all tests
 
 test-coverage: test ## Show test coverage
 	go tool cover -html=coverage.out

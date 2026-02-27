@@ -146,6 +146,59 @@ chmod +x test-dispatch.sh
 ./test-dispatch.sh
 ```
 
+## Testing
+
+The repository includes unit tests and integration tests. Unit tests run quickly without external dependencies. Integration tests spin up an isolated Docker Compose stack automatically.
+
+### Unit Tests
+
+Run unit tests for the `pkg/` package tree:
+
+```bash
+make test-unit
+```
+
+This runs `go test -v -race ./pkg/...` with the race detector enabled. No Docker or external services needed.
+
+### Integration Tests
+
+Run integration tests against a full test stack:
+
+```bash
+make test-integration
+```
+
+This command:
+1. Starts `docker-compose.test.yaml` with isolated services
+2. Runs all tests marked with `//go:build integration`
+3. Tears down the stack
+
+Integration tests are invisible to plain `go test ./...` due to the build tag. The test stack runs on different ports than the dev stack, allowing both to run simultaneously:
+
+| Service      | Dev Port | Test Port |
+|--------------|----------|-----------|
+| MQTT         | 1883     | 11883     |
+| Nomad        | 4646     | 14646     |
+| Orchestrator | 8080     | 18080     |
+
+### All Tests
+
+Run both unit and integration tests:
+
+```bash
+make test-all
+```
+
+This runs `test-unit` followed by `test-integration`.
+
+### Coverage
+
+Generate an HTML coverage report:
+
+```bash
+make test-coverage
+```
+
 ## API Endpoints
 
 ### POST `/compute`
