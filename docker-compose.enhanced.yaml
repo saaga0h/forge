@@ -1,5 +1,8 @@
 # docker-compose.enhanced.yaml
-# Full local testing stack with LLM transcoding layer
+# Full local dev stack with custom Nomad image that auto-registers the gpu-compute job.
+# Differs from docker-compose.yaml in that the Nomad server uses a custom image
+# (nomad-server/Dockerfile) which runs entrypoint.sh to register the parameterized
+# batch job on startup — needed for actual job dispatch testing.
 # Usage: docker-compose -f docker-compose.enhanced.yaml up
 
 services:
@@ -23,58 +26,29 @@ services:
       timeout: 5s
       retries: 3
 
-  # PostgreSQL (for pattern storage)
-  postgres:
-    image: postgres:16-alpine
-    container_name: postgres-patterns
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=home_automation
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres_dev_password  # Change in production!
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./go-orchestrator/migrations:/docker-entrypoint-initdb.d:ro
-    restart: unless-stopped
-    networks:
-      - gpu-compute-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Ollama (LLM service)
-  # Note: Using host Ollama for Mac M4 (better performance than containerized)
-  # Host Ollama runs on localhost:11434
-  # No container needed - orchestrator will use host.docker.internal:11434
-
-  # Nomad Server (for job orchestration)
-  # DEV MODE: Custom image with embedded Fortran worker for raw_exec
+  # Nomad Server — custom image with gpu-compute job pre-registered
   nomad-server:
     build:
-      context: .
-      dockerfile: nomad-server/Dockerfile.ubuntu
+      context: nomad-server
+      dockerfile: Dockerfile
     container_name: nomad-server
-    privileged: true  # Required for cgroup access on Mac Docker Desktop
+    privileged: true
     ports:
       - "4646:4646"
       - "4647:4647"
       - "4648:4648"
-    command: agent -dev -bind=0.0.0.0 -config=/etc/nomad/nomad-dev.hcl
     volumes:
       - nomad-data:/opt/nomad/data
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw  # Mount cgroup with write access
-      - ./nomad-server/nomad-dev.hcl:/etc/nomad/nomad-dev.hcl:ro  # Explicit CPU config
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     restart: unless-stopped
     networks:
       - gpu-compute-net
     healthcheck:
-      test: ["CMD", "nomad", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "nomad", "job", "status", "gpu-compute"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   # Consul (service discovery)
   consul:
@@ -95,42 +69,21 @@ services:
       timeout: 5s
       retries: 3
 
-  # Go Orchestrator (with LLM transcoding)
+  # Go Orchestrator
   orchestrator:
     build:
-      context: ./go-orchestrator
+      context: .
       dockerfile: Dockerfile
     container_name: gpu-orchestrator
     ports:
       - "8080:8080"
     environment:
-      # MQTT
       - MQTT_BROKER=tcp://mqtt:1883
-
-      # Nomad
       - NOMAD_ADDR=http://nomad-server:4646
       - NOMAD_JOB_NAME=gpu-compute
-
-      # Database
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres_dev_password
-      - DB_NAME=home_automation
-
-      # LLM (using host Ollama for Mac M4 performance)
-      - OLLAMA_URL=http://host.docker.internal:11434
-      - OLLAMA_MODEL=qwen2.5:7b
-      - LLM_CACHE_ENABLED=true
-      - LLM_CACHE_TTL=720h
-
-      # App
       - PORT=8080
-      - LOG_LEVEL=info
     depends_on:
       mqtt:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
       nomad-server:
         condition: service_healthy
@@ -138,35 +91,13 @@ services:
     networks:
       - gpu-compute-net
     volumes:
-      - ./go-orchestrator/configs:/app/configs:ro
-
-  # Optional: pgAdmin (database UI)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    ports:
-      - "5050:80"
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@localhost
-      - PGADMIN_DEFAULT_PASSWORD=admin
-      - PGADMIN_CONFIG_SERVER_MODE=False
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    depends_on:
-      - postgres
-    restart: unless-stopped
-    networks:
-      - gpu-compute-net
-    profiles:
-      - debug  # Only start with: docker-compose --profile debug up
+      - ./configs:/app/configs:ro
 
 volumes:
   mqtt-data:
   mqtt-logs:
   nomad-data:
   consul-data:
-  postgres-data:
-  pgadmin-data:
 
 networks:
   gpu-compute-net:

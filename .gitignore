@@ -1,25 +1,13 @@
 # GPU Compute Orchestrator - Git Ignore
 
 # ============================================================================
-# Fortran Build Artifacts
+# Build Artifacts
 # ============================================================================
 
-# Compiled binaries
-fortran-compute/bin/*
-!fortran-compute/bin/.gitkeep
-
-# Diffusion N-Body binaries and build artifacts
-compute/diffusion-nbody/fortran-kernel/bin/*
-compute/diffusion-nbody/fortran-kernel/build/
-compute/diffusion-nbody/rust-worker/target/
-
-# Object files and modules
-fortran-compute/build/
+# Object files
 *.o
-*.mod
-*.smod
 
-# Fortran temporary files
+# Temporary files
 *.tmp
 *.bak
 
@@ -28,14 +16,11 @@ fortran-compute/build/
 # ============================================================================
 
 # Go binaries
-go-orchestrator/bin/*
-!go-orchestrator/bin/.gitkeep
-
-# Go build cache
-go-orchestrator/pkg/
+bin/*
+!bin/.gitkeep
 
 # Vendor directory (if using)
-go-orchestrator/vendor/
+vendor/
 
 # Go test coverage
 *.out
@@ -277,7 +262,6 @@ mqtt-messages/
 mqtt-debug.log
 
 # Database dumps
-*.sql
 *.dump
 postgres-data/
 
