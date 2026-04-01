@@ -4,7 +4,7 @@
 services:
   # MQTT Broker
   mqtt:
-    image: eclipse-mosquitto:2.0
+    image: eclipse-mosquitto:2.0@sha256:6852da90a65dfff7aa3a1c8b249e92bb83c17ea8bbcce56bedff8707332a1a29
     container_name: mqtt-broker
     ports:
       - "1883:1883"
@@ -19,7 +19,7 @@ services:
 
   # Nomad Server (for local testing)
   nomad-server:
-    image: hashicorp/nomad:1.8
+    image: hashicorp/nomad:1.8@sha256:e6ef961e11941b464784c3eed70b6e9822244eb3ca8a5167f5a46cb0d7fbc022
     container_name: nomad-server
     ports:
       - "4646:4646"
@@ -36,7 +36,7 @@ services:
 
   # Consul (optional, for service discovery)
   consul:
-    image: hashicorp/consul:1.19
+    image: hashicorp/consul:1.19@sha256:e244c64df77ab3586f177f1692e98575086eb40343dc82a6320f5e79543490eb
     container_name: consul
     ports:
       - "8500:8500"
