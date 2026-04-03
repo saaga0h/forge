@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/nomad/api v0.0.0-20240717122358-3d93bd3778f3
+	github.com/hashicorp/nomad/api 5e4b572152a7
 )
 
 require (
