@@ -15,7 +15,6 @@ type Dispatcher struct {
 
 type Config struct {
 	Address string
-	JobName string // Parameterized job name
 }
 
 type DispatchResult struct {
@@ -46,7 +45,7 @@ func NewDispatcher(config *Config) (*Dispatcher, error) {
 	}, nil
 }
 
-func (d *Dispatcher) Dispatch(jobID string, meta map[string]string) (*DispatchResult, error) {
+func (d *Dispatcher) Dispatch(operation, jobID string, meta map[string]string) (*DispatchResult, error) {
 	if meta == nil {
 		meta = make(map[string]string)
 	}
@@ -56,7 +55,7 @@ func (d *Dispatcher) Dispatch(jobID string, meta map[string]string) (*DispatchRe
 
 	start := time.Now()
 	resp, _, err := jobs.Dispatch(
-		d.config.JobName,
+		operation,
 		meta,
 		nil, // No payload
 		"",  // No ID prefix

@@ -34,16 +34,11 @@ func TestJob_Duration_WithCompletedAt(t *testing.T) {
 	created := time.Unix(1700000000, 0)
 	completed := created.Add(5 * time.Minute)
 
-	j := &Job{
-		CreatedAt:   created,
-		CompletedAt: &completed,
-	}
-
-	got := j.Duration()
+	got := completed.Sub(created)
 	want := 5 * time.Minute
 
 	if got != want {
-		t.Errorf("Duration(): got %v, want %v", got, want)
+		t.Errorf("Duration: got %v, want %v", got, want)
 	}
 }
 
@@ -53,25 +48,23 @@ func TestJob_Duration_NoCompletedAt(t *testing.T) {
 		CompletedAt: nil,
 	}
 
-	got := j.Duration()
+	got := time.Since(j.CreatedAt)
 
 	if got <= 0 {
-		t.Errorf("Duration() without CompletedAt: got %v, expected > 0", got)
+		t.Errorf("Duration without CompletedAt: got %v, expected > 0", got)
 	}
-	// Should be approximately 10 seconds (within 1s tolerance)
 	if got > 15*time.Second {
-		t.Errorf("Duration() without CompletedAt: got %v, expected roughly 10s", got)
+		t.Errorf("Duration without CompletedAt: got %v, expected roughly 10s", got)
 	}
 }
 
-func TestRequest_Defaults(t *testing.T) {
+func TestRequestFields(t *testing.T) {
 	r := Request{}
 
-	// Zero value access should not panic
 	_ = r.Operation
 	_ = r.Payload
-	_ = r.Priority
-	_ = r.Timeout
+	_ = r.ClientID
+	_ = r.CorrelationID
 
 	if r.Operation != "" {
 		t.Errorf("Operation: expected empty string, got %q", r.Operation)

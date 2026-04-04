@@ -22,7 +22,6 @@ func main() {
 	mqttUser := getEnv("MQTT_USER", "")
 	mqttPassword := getEnv("MQTT_PASSWORD", "")
 	nomadAddr := getEnv("NOMAD_ADDR", "http://nomad:4646")
-	nomadJobName := getEnv("NOMAD_JOB_NAME", "gpu-compute")
 
 	// Initialize MQTT client
 	mqttClient, err := mqtt.NewClient(&mqtt.Config{
@@ -39,7 +38,6 @@ func main() {
 	// Initialize Nomad dispatcher
 	nomadDispatcher, err := nomad.NewDispatcher(&nomad.Config{
 		Address: nomadAddr,
-		JobName: nomadJobName,
 	})
 	if err != nil {
 		log.Fatalf("Failed to create Nomad dispatcher: %v", err)
@@ -48,7 +46,6 @@ func main() {
 	// Initialize compute manager
 	computeMgr := compute.NewManager(mqttClient, nomadDispatcher, &compute.Config{
 		DefaultTimeout: 5 * time.Minute,
-		MaxRetries:     3,
 	})
 	_ = computeMgr
 

@@ -11,6 +11,9 @@ const (
 
 	// TopicPatternLogs matches log output from any job.
 	TopicPatternLogs = "compute/jobs/+/logs"
+
+	// TopicPatternRequests matches all incoming client job requests.
+	TopicPatternRequests = "compute/request/+/+"
 )
 
 // TopicParams returns the params topic for a job (retained, orchestrator → worker).
@@ -31,4 +34,9 @@ func TopicResult(jobID string) string {
 // TopicLogs returns the logs topic for a job (worker → orchestrator).
 func TopicLogs(jobID string) string {
 	return fmt.Sprintf("compute/jobs/%s/logs", jobID)
+}
+
+// TopicResponse returns the response topic for a client request.
+func TopicResponse(clientID, correlationID string) string {
+	return fmt.Sprintf("compute/response/%s/%s", clientID, correlationID)
 }
