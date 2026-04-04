@@ -7,39 +7,40 @@ import (
 	"time"
 )
 
-func TestTopicBuilder_Params(t *testing.T) {
-	tb := NewTopicBuilder("job-123")
-	got := tb.Params()
+const (
+	testJobID      = "job-123"
+	testJobIDOther = "test-job"
+)
+
+func TestTopicParams(t *testing.T) {
+	got := TopicParams(testJobID)
 	want := "compute/jobs/job-123/params"
 	if got != want {
-		t.Errorf("Params(): got %q, want %q", got, want)
+		t.Errorf("TopicParams(): got %q, want %q", got, want)
 	}
 }
 
-func TestTopicBuilder_Status(t *testing.T) {
-	tb := NewTopicBuilder("job-123")
-	got := tb.Status()
+func TestTopicStatus(t *testing.T) {
+	got := TopicStatus(testJobID)
 	want := "compute/jobs/job-123/status"
 	if got != want {
-		t.Errorf("Status(): got %q, want %q", got, want)
+		t.Errorf("TopicStatus(): got %q, want %q", got, want)
 	}
 }
 
-func TestTopicBuilder_Result(t *testing.T) {
-	tb := NewTopicBuilder("job-123")
-	got := tb.Result()
+func TestTopicResult(t *testing.T) {
+	got := TopicResult(testJobID)
 	want := "compute/jobs/job-123/result"
 	if got != want {
-		t.Errorf("Result(): got %q, want %q", got, want)
+		t.Errorf("TopicResult(): got %q, want %q", got, want)
 	}
 }
 
-func TestTopicBuilder_Logs(t *testing.T) {
-	tb := NewTopicBuilder("job-123")
-	got := tb.Logs()
+func TestTopicLogs(t *testing.T) {
+	got := TopicLogs(testJobID)
 	want := "compute/jobs/job-123/logs"
 	if got != want {
-		t.Errorf("Logs(): got %q, want %q", got, want)
+		t.Errorf("TopicLogs(): got %q, want %q", got, want)
 	}
 }
 
@@ -55,16 +56,15 @@ func TestTopicPatternConstants(t *testing.T) {
 		t.Errorf("TopicPatternLogs %q: expected '+' wildcard", TopicPatternLogs)
 	}
 
-	// Patterns must match the topic format produced by TopicBuilder
-	tb := NewTopicBuilder("test-job")
-	if !matchesMQTTPattern(TopicPatternResults, tb.Result()) {
-		t.Errorf("TopicPatternResults %q should match %q", TopicPatternResults, tb.Result())
+	// Patterns must match the topic format produced by the topic functions
+	if !matchesMQTTPattern(TopicPatternResults, TopicResult(testJobIDOther)) {
+		t.Errorf("TopicPatternResults %q should match %q", TopicPatternResults, TopicResult(testJobIDOther))
 	}
-	if !matchesMQTTPattern(TopicPatternStatus, tb.Status()) {
-		t.Errorf("TopicPatternStatus %q should match %q", TopicPatternStatus, tb.Status())
+	if !matchesMQTTPattern(TopicPatternStatus, TopicStatus(testJobIDOther)) {
+		t.Errorf("TopicPatternStatus %q should match %q", TopicPatternStatus, TopicStatus(testJobIDOther))
 	}
-	if !matchesMQTTPattern(TopicPatternLogs, tb.Logs()) {
-		t.Errorf("TopicPatternLogs %q should match %q", TopicPatternLogs, tb.Logs())
+	if !matchesMQTTPattern(TopicPatternLogs, TopicLogs(testJobIDOther)) {
+		t.Errorf("TopicPatternLogs %q should match %q", TopicPatternLogs, TopicLogs(testJobIDOther))
 	}
 }
 

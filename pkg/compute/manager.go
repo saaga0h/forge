@@ -164,15 +164,13 @@ func (m *Manager) Submit(ctx context.Context, req *Request) (*Job, error) {
 
 	// Step 1: Publish params to MQTT (RETAINED)
 	// Format: {job_id: "...", ...payload_fields}
-	topics := mqtt.NewTopicBuilder(jobID)
-
 	params := make(map[string]interface{})
 	for k, v := range req.Payload {
 		params[k] = v
 	}
 	params["job_id"] = jobID
 
-	if err := m.mqttClient.Publish(topics.Params(), params, true); err != nil {
+	if err := m.mqttClient.Publish(mqtt.TopicParams(jobID), params, true); err != nil {
 		m.jobs.Delete(jobID)
 		return nil, fmt.Errorf("mqtt publish params failed: %w", err)
 	}

@@ -1,8 +1,6 @@
-// go-orchestrator/pkg/mqtt/types.go
 package mqtt
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -42,34 +40,3 @@ type JobLog struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-// TopicBuilder helps construct MQTT topics
-type TopicBuilder struct {
-	jobID string
-}
-
-func NewTopicBuilder(jobID string) *TopicBuilder {
-	return &TopicBuilder{jobID: jobID}
-}
-
-func (tb *TopicBuilder) Params() string {
-	return fmt.Sprintf("compute/jobs/%s/params", tb.jobID)
-}
-
-func (tb *TopicBuilder) Status() string {
-	return fmt.Sprintf("compute/jobs/%s/status", tb.jobID)
-}
-
-func (tb *TopicBuilder) Result() string {
-	return fmt.Sprintf("compute/jobs/%s/result", tb.jobID)
-}
-
-func (tb *TopicBuilder) Logs() string {
-	return fmt.Sprintf("compute/jobs/%s/logs", tb.jobID)
-}
-
-// Static topic patterns for subscriptions
-const (
-	TopicPatternResults = "compute/jobs/+/result"
-	TopicPatternStatus  = "compute/jobs/+/status"
-	TopicPatternLogs    = "compute/jobs/+/logs"
-)
