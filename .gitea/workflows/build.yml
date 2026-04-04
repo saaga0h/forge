@@ -1,0 +1,57 @@
+# Build and publish the Forge orchestrator binary on every push to main,
+# then redeploy the Nomad job.
+#
+# Prerequisites:
+#   - Runner "packer" is the same host as the nginx artifact server
+#   - /var/lib/packer-builds/binaries/forge/{amd64,arm64}/ directories exist
+#     and are writable by the act_runner user
+#   - Gitea repo variables: NOMAD_ADDR, ARTIFACT_BASE
+#   - Vault secret at secret/data/nomad/forge:
+#       MQTT_BROKER, MQTT_USER, MQTT_PASSWORD, LOG_LEVEL
+
+name: build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: packer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build amd64 binary
+        run: |
+          mkdir -p build/amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+            -ldflags="-w -s -X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)" \
+            -o build/amd64/orchestrator main.go
+
+      - name: Build arm64 binary
+        run: |
+          mkdir -p build/arm64
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build \
+            -ldflags="-w -s -X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)" \
+            -o build/arm64/orchestrator main.go
+
+      - name: Publish binaries
+        run: |
+          mkdir -p /var/lib/packer-builds/binaries/forge/amd64
+          mkdir -p /var/lib/packer-builds/binaries/forge/arm64
+          cp -f build/amd64/orchestrator /var/lib/packer-builds/binaries/forge/amd64/
+          cp -f build/arm64/orchestrator /var/lib/packer-builds/binaries/forge/arm64/
+          echo "Published:"
+          ls -lh /var/lib/packer-builds/binaries/forge/amd64/
+
+      - name: Deploy Nomad jobs
+        env:
+          NOMAD_ADDR: ${{ vars.NOMAD_ADDR }}
+          ARTIFACT_BASE: ${{ vars.ARTIFACT_BASE }}
+        run: |
+          for hcl in deploy/nomad/*.hcl; do
+            envsubst '${ARTIFACT_BASE}' < "$hcl" | nomad job run -
+          done

@@ -1,4 +1,4 @@
-.PHONY: help build run test test-unit test-integration test-all clean docker-build docker-push deps
+.PHONY: help build run test test-unit test-integration test-all clean docker-build docker-push deps deploy
 
 APP_NAME := gpu-compute-orchestrator
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -63,3 +63,8 @@ lint: ## Run linter
 
 dev: ## Development mode with hot reload (requires air)
 	air
+
+deploy: ## Deploy Nomad jobs (requires NOMAD_ADDR and ARTIFACT_BASE env vars)
+	for hcl in deploy/nomad/*.hcl; do \
+		envsubst '$${ARTIFACT_BASE}' < "$$hcl" | nomad job run -; \
+	done

@@ -1,5 +1,7 @@
 # GPU Compute Orchestrator
 
+*Flexible Orchestration Runtime for GPU Execution*
+
 Distributed GPU compute orchestration: HTTP API → MQTT dispatch → Nomad scheduling → async results.
 
 ## Architecture
