@@ -9,7 +9,7 @@
 #   - Gitea repo variables: NOMAD_ADDR, ARTIFACT_BASE
 #
 # Deploy:
-#   ARTIFACT_BASE=<url> envsubst '${ARTIFACT_BASE}' < deploy/nomad/forge-daemons.hcl | nomad job run -
+#   ARTIFACT_BASE=<url> NOMAD_ADDR=<url> envsubst '${ARTIFACT_BASE} ${NOMAD_ADDR}' < deploy/nomad/forge-daemons.hcl | nomad job run -
 #
 # Secrets stored at: secret/data/nomad/forge
 #   MQTT_BROKER, MQTT_USER, MQTT_PASSWORD, LOG_LEVEL
@@ -20,6 +20,7 @@ job "forge-daemons" {
 
   meta {
     artifact_base  = "${ARTIFACT_BASE}"
+    nomad_addr     = "${NOMAD_ADDR}"
     # Name of the parameterized Nomad worker job Forge dispatches to
     worker_job     = "gpu-compute"
   }
@@ -70,8 +71,8 @@ MQTT_USER={{ .Data.data.MQTT_USER }}
 MQTT_PASSWORD={{ .Data.data.MQTT_PASSWORD }}
 LOG_LEVEL={{ .Data.data.LOG_LEVEL }}
 {{ end }}
-NOMAD_ADDR=${NOMAD_ADDR}
-NOMAD_JOB_NAME=${NOMAD_META_worker_job}
+NOMAD_ADDR={{ env "NOMAD_META_nomad_addr" }}
+NOMAD_JOB_NAME={{ env "NOMAD_META_worker_job" }}
 EOT
       }
 
