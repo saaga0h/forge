@@ -186,14 +186,18 @@ func main() {
 
 	// Configuration from environment
 	mqttBroker := getEnv("MQTT_BROKER", "tcp://mqtt:1883")
+	mqttUser := getEnv("MQTT_USER", "")
+	mqttPassword := getEnv("MQTT_PASSWORD", "")
 	nomadAddr := getEnv("NOMAD_ADDR", "http://nomad:4646")
 	nomadJobName := getEnv("NOMAD_JOB_NAME", "gpu-compute")
 	port := getEnv("PORT", "8080")
 
 	// Initialize MQTT client
 	mqttClient, err := mqtt.NewClient(&mqtt.Config{
-		Broker: mqttBroker,
-		QoS:    1,
+		Broker:   mqttBroker,
+		Username: mqttUser,
+		Password: mqttPassword,
+		QoS:      1,
 	})
 	if err != nil {
 		log.Fatalf("Failed to create MQTT client: %v", err)
