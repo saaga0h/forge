@@ -24,10 +24,14 @@ job "forge-daemons" {
     worker_job     = "gpu-compute"
   }
 
-  # Forge runs on general-purpose nodes, not GPU workers
+  # Forge runs on the GPU node (where MQTT broker is reachable)
   constraint {
     attribute = "${meta.gpu}"
-    operator  = "!="
+    value     = "true"
+  }
+
+  constraint {
+    attribute = "${meta.rocm}"
     value     = "true"
   }
 
