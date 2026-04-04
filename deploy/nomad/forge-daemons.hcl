@@ -84,10 +84,6 @@ EOT
         memory = 128
       }
 
-      service {
-        name = "forge-orchestrator"
-        tags = ["forge"]
-      }
     }
 
   }
