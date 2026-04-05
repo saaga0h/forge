@@ -64,7 +64,8 @@ lint: ## Run linter
 dev: ## Development mode with hot reload (requires air)
 	air
 
-deploy: ## Deploy Nomad jobs (requires NOMAD_ADDR and ARTIFACT_BASE env vars)
+deploy: build ## Deploy Nomad jobs (requires NOMAD_ADDR and ARTIFACT_BASE env vars)
+	$(eval ARTIFACT_SHA256 := $(shell sha256sum bin/orchestrator | awk '{print $$1}'))
 	for hcl in deploy/nomad/*.hcl; do \
-		envsubst '$${ARTIFACT_BASE}' < "$$hcl" | nomad job run -; \
+		ARTIFACT_SHA256=$(ARTIFACT_SHA256) envsubst '$${ARTIFACT_BASE} $${NOMAD_ADDR} $${ARTIFACT_SHA256}' < "$$hcl" | nomad job run -; \
 	done

@@ -59,6 +59,9 @@ job "forge-daemons" {
         source      = "${NOMAD_META_artifact_base}/${attr.cpu.arch}/orchestrator"
         destination = "local/orchestrator"
         mode        = "file"
+        options {
+          checksum = "sha256:${ARTIFACT_SHA256}"
+        }
       }
 
       template {
