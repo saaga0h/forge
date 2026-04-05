@@ -9,7 +9,8 @@
 #   - Gitea repo variables: NOMAD_ADDR, ARTIFACT_BASE
 #
 # Deploy:
-#   ARTIFACT_BASE=<url> NOMAD_ADDR=<url> envsubst '${ARTIFACT_BASE} ${NOMAD_ADDR}' < deploy/nomad/forge-daemons.hcl | nomad job run -
+#   ARTIFACT_BASE=<url> NOMAD_ADDR=<url> ARTIFACT_SHA256=<hash> envsubst '${ARTIFACT_BASE} ${NOMAD_ADDR} ${ARTIFACT_SHA256}' < deploy/nomad/forge-daemons.hcl | nomad job run -
+#   (make deploy computes ARTIFACT_SHA256 automatically)
 #
 # Secrets stored at: secret/data/nomad/forge
 #   MQTT_BROKER, MQTT_USER, MQTT_PASSWORD, LOG_LEVEL
@@ -19,12 +20,10 @@ job "forge-daemons" {
   type        = "service"
 
   meta {
-    artifact_base   = "${ARTIFACT_BASE}"
-    nomad_addr      = "${NOMAD_ADDR}"
+    artifact_base  = "${ARTIFACT_BASE}"
+    nomad_addr     = "${NOMAD_ADDR}"
     # Name of the parameterized Nomad worker job Forge dispatches to
-    worker_job      = "gpu-compute"
-    # sha256 of the orchestrator binary — changes on every build, forces re-fetch
-    artifact_sha256 = "${ARTIFACT_SHA256}"
+    worker_job     = "gpu-compute"
   }
 
   # Forge runs on the GPU node (where MQTT broker is reachable)
@@ -58,7 +57,7 @@ job "forge-daemons" {
       }
 
       artifact {
-        source      = "${NOMAD_META_artifact_base}/${attr.cpu.arch}/orchestrator?checksum=sha256:${NOMAD_META_artifact_sha256}"
+        source      = "${ARTIFACT_BASE}/${attr.cpu.arch}/orchestrator?checksum=sha256:${ARTIFACT_SHA256}"
         destination = "local/orchestrator"
         mode        = "file"
       }
