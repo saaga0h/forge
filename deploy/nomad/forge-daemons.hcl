@@ -9,8 +9,8 @@
 #   - Gitea repo variables: NOMAD_ADDR, ARTIFACT_BASE
 #
 # Deploy:
-#   ARTIFACT_BASE=<url> NOMAD_ADDR=<url> ARTIFACT_SHA256=<hash> envsubst '${ARTIFACT_BASE} ${NOMAD_ADDR} ${ARTIFACT_SHA256}' < deploy/nomad/forge-daemons.hcl | nomad job run -
-#   (make deploy computes ARTIFACT_SHA256 automatically)
+#   ARTIFACT_BASE=<url> NOMAD_ADDR=<url> ARTIFACT_SHA256=<hash> envsubst < deploy/nomad/forge-daemons.hcl | nomad job run -
+#   (make deploy computes ARTIFACT_SHA256 and uploads the binary automatically)
 #
 # Secrets stored at: secret/data/nomad/forge
 #   MQTT_BROKER, MQTT_USER, MQTT_PASSWORD, LOG_LEVEL
