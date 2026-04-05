@@ -19,10 +19,12 @@ job "forge-daemons" {
   type        = "service"
 
   meta {
-    artifact_base  = "${ARTIFACT_BASE}"
-    nomad_addr     = "${NOMAD_ADDR}"
+    artifact_base   = "${ARTIFACT_BASE}"
+    nomad_addr      = "${NOMAD_ADDR}"
     # Name of the parameterized Nomad worker job Forge dispatches to
-    worker_job     = "gpu-compute"
+    worker_job      = "gpu-compute"
+    # sha256 of the orchestrator binary — changes on every build, forces re-fetch
+    artifact_sha256 = "${ARTIFACT_SHA256}"
   }
 
   # Forge runs on the GPU node (where MQTT broker is reachable)
@@ -56,12 +58,9 @@ job "forge-daemons" {
       }
 
       artifact {
-        source      = "${NOMAD_META_artifact_base}/${attr.cpu.arch}/orchestrator"
+        source      = "${NOMAD_META_artifact_base}/${attr.cpu.arch}/orchestrator?checksum=sha256:${NOMAD_META_artifact_sha256}"
         destination = "local/orchestrator"
         mode        = "file"
-        options {
-          checksum = "sha256:${ARTIFACT_SHA256}"
-        }
       }
 
       template {
