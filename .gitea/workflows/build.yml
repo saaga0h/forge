@@ -54,5 +54,5 @@ jobs:
           BUILD_SHA: ${{ gitea.sha }}
         run: |
           for hcl in deploy/nomad/*.hcl; do
-            envsubst < "$hcl" | nomad job run -
+            envsubst '$ARTIFACT_BASE $NOMAD_ADDR $BUILD_SHA' < "$hcl" | nomad job run -
           done

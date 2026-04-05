@@ -65,4 +65,4 @@ dev: ## Development mode with hot reload (requires air)
 	air
 
 deploy: build ## Deploy Nomad jobs (requires NOMAD_ADDR and ARTIFACT_BASE env vars)
-	BUILD_SHA=$(VERSION) envsubst < deploy/nomad/forge-daemons.hcl | nomad job run -
+	BUILD_SHA=$(VERSION) envsubst '$$ARTIFACT_BASE $$NOMAD_ADDR $$BUILD_SHA' < deploy/nomad/forge-daemons.hcl | nomad job run -
