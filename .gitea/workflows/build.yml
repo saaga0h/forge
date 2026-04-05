@@ -51,7 +51,8 @@ jobs:
         env:
           NOMAD_ADDR: ${{ vars.NOMAD_ADDR }}
           ARTIFACT_BASE: ${{ vars.ARTIFACT_BASE }}
+          BUILD_SHA: ${{ gitea.sha }}
         run: |
           for hcl in deploy/nomad/*.hcl; do
-            envsubst '${ARTIFACT_BASE} ${NOMAD_ADDR}' < "$hcl" | nomad job run -
+            envsubst < "$hcl" | nomad job run -
           done

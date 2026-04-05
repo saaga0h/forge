@@ -65,5 +65,4 @@ dev: ## Development mode with hot reload (requires air)
 	air
 
 deploy: build ## Deploy Nomad jobs (requires NOMAD_ADDR and ARTIFACT_BASE env vars)
-	sha256=$$(sha256sum bin/orchestrator | awk '{print $$1}'); \
-	ARTIFACT_SHA256=$$sha256 envsubst < deploy/nomad/forge-daemons.hcl | nomad job run -
+	BUILD_SHA=$(VERSION) envsubst < deploy/nomad/forge-daemons.hcl | nomad job run -

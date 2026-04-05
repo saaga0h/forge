@@ -24,6 +24,8 @@ job "forge-daemons" {
     nomad_addr     = "${NOMAD_ADDR}"
     # Name of the parameterized Nomad worker job Forge dispatches to
     worker_job     = "gpu-compute"
+    # Git commit — changes on every deploy, forces Nomad to re-fetch the artifact
+    build          = "${BUILD_SHA}"
   }
 
   # Forge runs on the GPU node (where MQTT broker is reachable)
@@ -57,7 +59,7 @@ job "forge-daemons" {
       }
 
       artifact {
-        source      = "${ARTIFACT_BASE}/${attr.cpu.arch}/orchestrator?checksum=sha256:${ARTIFACT_SHA256}"
+        source      = "${ARTIFACT_BASE}/${attr.cpu.arch}/orchestrator"
         destination = "local/orchestrator"
         mode        = "file"
       }
