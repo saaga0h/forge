@@ -19,7 +19,7 @@ services:
 
   # Nomad Server (for local testing)
   nomad-server:
-    image: hashicorp/nomad:1.8@sha256:e6ef961e11941b464784c3eed70b6e9822244eb3ca8a5167f5a46cb0d7fbc022
+    image: hashicorp/nomad:1.11@sha256:996069720c5dbb48c644bf5ac61f14593fb362408921b7d4c6086fb2cfc9f2c4
     container_name: nomad-server
     ports:
       - "4646:4646"
