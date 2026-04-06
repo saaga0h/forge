@@ -1,6 +1,6 @@
 # Forge
 
-*GPU Compute Orchestrator*
+*Flexible Orchestration Runtime for GPU Execution*
 
 Forge is a daemon that bridges MQTT clients and Nomad-scheduled GPU compute workers. Clients publish job requests over MQTT, Forge dispatches the appropriate Nomad parameterized batch job, and routes results back to the client — all asynchronously over MQTT.
 
