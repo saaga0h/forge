@@ -1,6 +1,6 @@
 module gpu-compute-orchestrator
 
-go 1.23
+go 1.23.0
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.0
@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
