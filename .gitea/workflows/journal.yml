@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout (full history)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           # concept-extract reads git log internally — full history required
           fetch-depth: 0
