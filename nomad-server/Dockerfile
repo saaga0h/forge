@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=hashicorp/nomad:1.8@sha256:e6ef961e11941b464784c3eed70b6e9822244eb3ca8a5167f5a46cb0d7fbc022 /bin/nomad /usr/local/bin/nomad
+COPY --from=hashicorp/nomad:1.11@sha256:996069720c5dbb48c644bf5ac61f14593fb362408921b7d4c6086fb2cfc9f2c4 /bin/nomad /usr/local/bin/nomad
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY client.hcl /etc/nomad.d/client.hcl
