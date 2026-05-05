@@ -36,7 +36,7 @@ services:
 
   # Consul (optional, for service discovery)
   consul:
-    image: hashicorp/consul:1.22@sha256:f278b51842bc26129911cccefdfaed52118ae00f692bc42be030d5c66d2370c0
+    image: hashicorp/consul:1.22@sha256:a230dcea0bb107bd7958a912d1429fb7f9d399637de7ffb814b34412b9e8c543
     container_name: consul
     ports:
       - "8500:8500"
