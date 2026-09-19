@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.26-alpine@sha256:f85330846cde1e57ca9ec309382da3b8e6ae3ab943d2739500e08c86393a21b1 AS builder
+FROM golang:1.26-alpine@sha256:51a7c389a5ddaf82f527191a1e9bff9928655130a44e4975dd1d7e0acf59f1ae AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git make ca-certificates tzdata
