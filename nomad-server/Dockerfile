@@ -2,7 +2,7 @@
 # No compute worker embedded — real workers live in compute repos and deploy separately.
 # Includes entrypoint that auto-registers the dev placeholder job on startup.
 
-FROM ubuntu:24.04@sha256:84e77dee7d1bc93fb029a45e3c6cb9d8aa4831ccfcc7103d36e876938d28895b
+FROM ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
